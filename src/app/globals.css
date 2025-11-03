@@ -52,8 +52,14 @@
     border-color: hsl(var(--border));
   }
   body {
-    color: hsl(var(--foreground));
+    color: white;
     background-color: hsl(var(--background));
     font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  }
+  /* Override for light mode */
+  @media (prefers-color-scheme: light) {
+    body {
+      color: hsl(var(--foreground));
+    }
   }
 }
