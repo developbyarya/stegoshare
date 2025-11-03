@@ -84,9 +84,6 @@ export default function DashboardPage() {
                         <Link href="/upload">
                             <Button>Upload File</Button>
                         </Link>
-                        <Button variant="outline" onClick={handleLogout}>
-                            Logout
-                        </Button>
                     </div>
                 </div>
 
