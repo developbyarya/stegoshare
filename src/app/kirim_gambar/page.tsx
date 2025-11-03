@@ -4,7 +4,7 @@ import { useState, useRef, DragEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function UploadPage() {
+export default function UploadImage() {
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -70,7 +70,7 @@ export default function UploadPage() {
             xhr.addEventListener("load", () => {
                 if (xhr.status === 200) {
                     const response = JSON.parse(xhr.responseText);
-                    setSuccess("File uploaded successfully!");
+                    setSuccess("IMG File uploaded successfully!");
 
                     // If secret.key was uploaded, redirect to secret page
                     if (response.redirect) {
@@ -106,14 +106,14 @@ export default function UploadPage() {
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
             <div className="container mx-auto px-4 py-8">
                 <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold">Upload File</h1>
+                    <h1 className="text-3xl font-bold">Upload Image</h1>
                 </div>
 
                 <Card className="max-w-2xl mx-auto">
                     <CardHeader>
-                        <CardTitle>Upload a File</CardTitle>
+                        <CardTitle>Upload an Image</CardTitle>
                         <CardDescription>
-                            Drag and drop your file here, or click to select
+                            Drag and drop your image here, or click to select
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -151,14 +151,14 @@ export default function UploadPage() {
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    <div className="text-4xl">📁</div>
+                                    <div className="text-4xl">📷</div>
                                     <div className="text-lg font-medium">
                                         {isDragging
-                                            ? "Drop your file here"
-                                            : "Select a file or drag it here"}
+                                            ? "Drop your Image here"
+                                            : "Select a Image or drag it here"}
                                     </div>
                                     <div className="text-sm text-muted-foreground">
-                                        Files are encrypted upon upload
+                                        Images are encrypted upon upload
                                     </div>
                                 </div>
                             )}
@@ -180,7 +180,7 @@ export default function UploadPage() {
                             <p className="font-medium mb-2">Note:</p>
                             <ul className="list-disc list-inside space-y-1">
                                 <li>
-                                    All files are encrypted before being stored
+                                    All iamges are encrypted before being stored
                                 </li>
                                 <li>
                                     Uploading a file named "secret.key" with the
