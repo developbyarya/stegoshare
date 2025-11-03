@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/hash";
+import { encryptUserData } from "@/lib/auth/userDataEncryption";
 
 /**
  * POST /api/auth/register
- * Register a new user
+ * Register a new user with encrypted data storage
  */
 export async function POST(request: NextRequest) {
     try {
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Check if user already exists
+        // Check if user already exists (using plain username for lookup)
         const existingUser = await prisma.user.findUnique({
             where: { username },
         });
@@ -40,11 +41,20 @@ export async function POST(request: NextRequest) {
         // Hash password
         const passwordHash = await hashPassword(password);
 
-        // Create user
+        // Encrypt user data using password as key
+        const encryptedData = encryptUserData(
+            { username, passwordHash },
+            password
+        );
+
+        // Create user with both plain and encrypted data
+        // Plain data kept for backward compatibility and login lookup
         const user = await prisma.user.create({
             data: {
-                username,
-                passwordHash,
+                username, // Plain username for lookup
+                passwordHash, // Plain hash for verification
+                encryptedUsername: encryptedData.encryptedUsername,
+                encryptedPasswordHash: encryptedData.encryptedPasswordHash,
             },
         });
 

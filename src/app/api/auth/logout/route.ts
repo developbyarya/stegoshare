@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { clearSecretCookie } from "@/lib/auth/secretAccess";
 
 /**
  * POST /api/auth/logout
- * Logout user and clear session
+ * Logout user and clear session and secret cookies
  */
 export async function POST() {
     const response = NextResponse.json(
@@ -18,6 +19,9 @@ export async function POST() {
         maxAge: 0,
         path: "/",
     });
+
+    // Clear secret access cookie
+    clearSecretCookie(response);
 
     return response;
 }

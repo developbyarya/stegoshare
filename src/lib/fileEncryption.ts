@@ -7,12 +7,52 @@ import crypto from "crypto";
 
 const ALGORITHM = "aes-256-cbc";
 const KEY_LENGTH = 32; // 256 bits
+const FILE_KEY_SALT = "stegoshare-file-key-salt"; // Fixed salt for user file keys
 
 /**
  * Derive encryption key from password
  */
 function deriveKey(password: string, salt: Buffer): Buffer {
     return crypto.scryptSync(password, salt.toString("hex"), KEY_LENGTH);
+}
+
+/**
+ * Derive user-specific file encryption key from userId
+ * This is deterministic - same userId always produces same key
+ * @param userId - User ID string
+ * @returns Derived key as hex string (for consistent storage/retrieval)
+ */
+export function deriveUserFileKey(userId: string): string {
+    const keyBuffer = crypto.scryptSync(userId, FILE_KEY_SALT, KEY_LENGTH);
+    return keyBuffer.toString("hex");
+}
+
+/**
+ * Encrypt file using user-specific key derived from userId
+ * @param fileBuffer - File buffer to encrypt
+ * @param userId - User ID to derive encryption key
+ * @returns Combined buffer with salt, IV, and encrypted data
+ */
+export async function encryptFileForUser(
+    fileBuffer: Buffer,
+    userId: string
+): Promise<Buffer> {
+    const userKey = deriveUserFileKey(userId);
+    return encryptFileToBuffer(fileBuffer, userKey);
+}
+
+/**
+ * Decrypt file using user-specific key derived from userId
+ * @param combinedBuffer - Buffer containing salt:iv:encrypted
+ * @param userId - User ID to derive decryption key
+ * @returns Decrypted file buffer
+ */
+export async function decryptFileForUser(
+    combinedBuffer: Buffer,
+    userId: string
+): Promise<Buffer> {
+    const userKey = deriveUserFileKey(userId);
+    return decryptFileFromBuffer(combinedBuffer, userKey);
 }
 
 /**
