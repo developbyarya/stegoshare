@@ -8,7 +8,7 @@ import { Menu } from "lucide-react";
 
 export default function Navbar() {
     const router = useRouter();
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState(false);
 
     const pathname = usePathname()
     const hideNavbarRoutes = ["/login", "/register"]
@@ -53,15 +53,20 @@ export default function Navbar() {
                     Menu
                 </div>
 
-                <nav className="flex flex-col space-y-4 px-6">
-                    <Link href="/" className="hover:text-blue-400" onClick={()=>setOpen(false)}>Dashboard</Link>
-                    <Link href="/text" className="hover:text-blue-400" onClick={()=>setOpen(false)}>Pesan Text (Crypto)</Link>
-                    <Link href="/image" className="hover:text-blue-400" onClick={()=>setOpen(false)}>Pesan Gambar (Steganografi)</Link>
-                    <Link href="/upload" className="hover:text-blue-400" onClick={()=>setOpen(false)}>Kirim File</Link>
-
-                    <button className="text-red-400 hover:text-red-500 mt-6 text-left" onClick={handleLogout}>
-                        Logout
-                    </button>
+                <nav className="flex flex-col space-y-3 px-6 justify-between h-[calc(100%-90px)]">
+                    <div>
+                        <ul className="space-y-2">  
+                            <li><Link href="/" className="hover:text-blue-400" onClick={()=>setOpen(false)}>Dashboard</Link></li>
+                            <li><Link href="/text" className="hover:text-blue-400" onClick={()=>setOpen(false)}>Pesan Text </Link></li>
+                            <li><Link href="/image" className="hover:text-blue-400" onClick={()=>setOpen(false)}>Pesan Gambar </Link></li>
+                            <li><Link href="/upload" className="hover:text-blue-400" onClick={()=>setOpen(false)}>Kirim File</Link></li>
+                        </ul>               
+                    </div>
+                    <div>
+                        <button className="text-red-400 hover:text-red-500 mt-6 text-left" onClick={handleLogout}>
+                            Logout
+                        </button>
+                    </div>
                 </nav>
             </div>
         </>

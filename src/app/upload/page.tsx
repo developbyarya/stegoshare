@@ -109,9 +109,6 @@ export default function UploadPage() {
             <div className="container mx-auto px-4 py-8">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-3xl font-bold">Upload File</h1>
-                    <Link href="/dashboard">
-                        <Button variant="outline">Back to Dashboard</Button>
-                    </Link>
                 </div>
 
                 <Card className="max-w-2xl mx-auto">
