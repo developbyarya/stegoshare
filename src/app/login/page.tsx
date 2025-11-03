@@ -51,7 +51,7 @@ export default function LoginPage() {
             console.log("Redirecting to dashboard");
 
             // Use window.location.href for reliable redirect after authentication
-            // window.location.href = "/dashboard";
+            window.location.href = "/dashboard";
         } catch (err) {
             console.error("Login error:", err);
             setError(err instanceof Error ? err.message : "An error occurred. Please try again.");
