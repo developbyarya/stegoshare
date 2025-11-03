@@ -31,10 +31,11 @@ export async function POST(request: NextRequest) {
         const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
         const result = await hideMessageInImage(imageBuffer, message);
 
-        return new NextResponse(result, {
+        // hideMessageInImage now returns a PNG buffer (lossless pixel-preserving output)
+        return new NextResponse(new Uint8Array(result), {
             headers: {
-                "Content-Type": imageFile.type,
-                "Content-Disposition": `attachment; filename="hidden_${imageFile.name}"`,
+                "Content-Type": "image/png",
+                "Content-Disposition": `attachment; filename="hidden_${imageFile.name.replace(/\.[^/.]+$/, "")}.png"`,
             },
         });
     } catch (error) {
