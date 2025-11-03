@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,6 @@ import { Form, FormField, FormLabel, FormMessage } from "@/components/ui/form";
 
 export default function LoginPage() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const redirect = searchParams.get("redirect") || "/dashboard";
 
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -30,9 +28,17 @@ export default function LoginPage() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ username, password }),
+                credentials: "include", // Ensure cookies are included
             });
 
-            const data = await response.json();
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                setError("Invalid response from server");
+                setLoading(false);
+                return;
+            }
 
             if (!response.ok) {
                 setError(data.error || "Login failed");
@@ -40,11 +46,15 @@ export default function LoginPage() {
                 return;
             }
 
-            // Redirect to dashboard or originally requested page
-            router.push(redirect);
-            router.refresh();
+            // Reset loading state and redirect to dashboard
+            setLoading(false);
+            console.log("Redirecting to dashboard");
+
+            // Use window.location.href for reliable redirect after authentication
+            // window.location.href = "/dashboard";
         } catch (err) {
-            setError("An error occurred. Please try again.");
+            console.error("Login error:", err);
+            setError(err instanceof Error ? err.message : "An error occurred. Please try again.");
             setLoading(false);
         }
     };
@@ -53,7 +63,7 @@ export default function LoginPage() {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold">Login</CardTitle>
+                    <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">Login</CardTitle>
                     <CardDescription>
                         Enter your credentials to access your account
                     </CardDescription>

@@ -184,7 +184,7 @@ export default function SecretPage() {
                 <CardContent className="space-y-6">
                     {/* Encryption */}
                     <div className="space-y-4">
-                        <h3 className="font-semibold">Encrypt Text</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">Encrypt Text</h3>
                         <FormField>
                             <FormLabel>Text to Encrypt</FormLabel>
                             <Input
@@ -217,7 +217,7 @@ export default function SecretPage() {
 
                     {/* Decryption */}
                     <div className="space-y-4 border-t pt-6">
-                        <h3 className="font-semibold">Decrypt Text</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">Decrypt Text</h3>
                         <FormField>
                             <FormLabel>Encrypted Text</FormLabel>
                             <Input
@@ -259,7 +259,7 @@ export default function SecretPage() {
                 <CardContent className="space-y-6">
                     {/* Hide Message */}
                     <div className="space-y-4">
-                        <h3 className="font-semibold">Hide Message in Image</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">Hide Message in Image</h3>
                         <FormField>
                             <FormLabel>Select Image</FormLabel>
                             <Input
@@ -292,7 +292,7 @@ export default function SecretPage() {
 
                     {/* Extract Message */}
                     <div className="space-y-4 border-t pt-6">
-                        <h3 className="font-semibold">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
                             Extract Message from Image
                         </h3>
                         <FormField>

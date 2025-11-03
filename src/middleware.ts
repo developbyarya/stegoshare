@@ -25,9 +25,7 @@ export async function middleware(request: NextRequest) {
 
     if (!auth) {
         // Redirect to login if not authenticated
-        const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("redirect", pathname);
-        return NextResponse.redirect(loginUrl);
+        return NextResponse.redirect(new URL("/login", request.url));
     }
 
     // Check secret access for /secret/* routes

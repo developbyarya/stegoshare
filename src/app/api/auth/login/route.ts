@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Generate session token
-        const token = generateSessionToken({
+        const token = await generateSessionToken({
             userId: user.id,
             username: user.username,
         });

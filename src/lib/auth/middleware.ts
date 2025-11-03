@@ -9,14 +9,23 @@ export async function verifyAuth(request: NextRequest): Promise<{
     userId: string;
     username: string;
 } | null> {
-    const cookieHeader = request.headers.get("cookie");
-    const token = extractTokenFromCookie(cookieHeader);
+    // Try Next.js built-in cookie parsing first (if available)
+    let token: string | null = request.cookies.get("session")?.value || null;
+
+    // Fallback to manual cookie parsing if cookies.get doesn't work
+    if (!token) {
+        const cookieHeader = request.headers.get("cookie");
+        token = extractTokenFromCookie(cookieHeader);
+    }
 
     if (!token) {
+        console.log("No session token found in cookies");
         return null;
     }
 
-    const payload = verifySessionToken(token);
+    console.log("Token from cookie:", token);
+    const payload = await verifySessionToken(token);
+    console.log("Payload:", payload);
     return payload;
 }
 

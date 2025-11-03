@@ -49,10 +49,11 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   body {
-    @apply bg-background text-foreground;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
     font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   }
 }

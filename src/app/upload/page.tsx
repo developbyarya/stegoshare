@@ -108,7 +108,7 @@ export default function UploadPage() {
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
             <div className="container mx-auto px-4 py-8">
                 <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold">Upload File</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Upload File</h1>
                     <Link href="/dashboard">
                         <Button variant="outline">Back to Dashboard</Button>
                     </Link>
@@ -144,7 +144,7 @@ export default function UploadPage() {
 
                             {uploading ? (
                                 <div className="space-y-4">
-                                    <div className="text-lg font-medium">
+                                    <div className="text-lg font-medium text-gray-900 dark:text-gray-100">
                                         Uploading... {Math.round(progress)}%
                                     </div>
                                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -157,7 +157,7 @@ export default function UploadPage() {
                             ) : (
                                 <div className="space-y-4">
                                     <div className="text-4xl">📁</div>
-                                    <div className="text-lg font-medium">
+                                    <div className="text-lg font-medium text-gray-900 dark:text-gray-100">
                                         {isDragging
                                             ? "Drop your file here"
                                             : "Select a file or drag it here"}
