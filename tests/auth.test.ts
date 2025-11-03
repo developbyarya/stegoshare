@@ -69,36 +69,36 @@ describe("Authentication Module", () => {
             process.env.JWT_SECRET = "test-secret-key";
         });
 
-        it("should generate a session token", () => {
+        it("should generate a session token", async () => {
             const payload = { userId: "123", username: "testuser" };
-            const token = generateSessionToken(payload);
+            const token = await generateSessionToken(payload);
             expect(token).toBeDefined();
             expect(typeof token).toBe("string");
         });
 
-        it("should verify and decode a valid token", () => {
+        it("should verify and decode a valid token", async () => {
             const payload = { userId: "123", username: "testuser" };
-            const token = generateSessionToken(payload);
-            const decoded = verifySessionToken(token);
+            const token = await generateSessionToken(payload);
+            const decoded = await verifySessionToken(token);
 
             expect(decoded).not.toBeNull();
             expect(decoded?.userId).toBe("123");
             expect(decoded?.username).toBe("testuser");
         });
 
-        it("should reject invalid token", () => {
+        it("should reject invalid token", async () => {
             const invalidToken = "invalid.token.here";
-            const decoded = verifySessionToken(invalidToken);
+            const decoded = await verifySessionToken(invalidToken);
             expect(decoded).toBeNull();
         });
 
-        it("should reject token with wrong secret", () => {
+        it("should reject token with wrong secret", async () => {
             const payload = { userId: "123", username: "testuser" };
-            const token = generateSessionToken(payload);
+            const token = await generateSessionToken(payload);
 
             // Change secret
             process.env.JWT_SECRET = "different-secret";
-            const decoded = verifySessionToken(token);
+            const decoded = await verifySessionToken(token);
             expect(decoded).toBeNull();
 
             // Restore

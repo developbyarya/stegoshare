@@ -7,7 +7,7 @@ export default async function Home() {
     const sessionCookie = cookieStore.get("session");
 
     if (sessionCookie) {
-        const payload = verifySessionToken(sessionCookie.value);
+        const payload = await verifySessionToken(sessionCookie.value);
         if (payload) {
             redirect("/dashboard");
         }
