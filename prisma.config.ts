@@ -1,4 +1,8 @@
+import { config } from "dotenv";
 import { defineConfig, env } from "prisma/config";
+
+// Load .env file before accessing environment variables
+config();
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -7,6 +11,7 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: env("DATABASE_URL"),
+    // Use DIRECT_URL for migrations, fallback to DATABASE_URL for queries
+    url: env("DIRECT_URL") || env("DATABASE_URL"),
   },
 });

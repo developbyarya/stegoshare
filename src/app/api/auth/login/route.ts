@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth/hash";
 import { generateSessionToken } from "@/lib/auth/session";
+import { decryptUserData } from "@/lib/auth/userDataEncryption";
 
 /**
  * POST /api/auth/login
  * Login user and create session
+ * Verifies encrypted user data
  */
 export async function POST(request: NextRequest) {
     try {
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Find user
+        // Find user (using plain username for lookup)
         const user = await prisma.user.findUnique({
             where: { username },
         });
@@ -31,7 +33,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Verify password
+        // Verify password using plain hash
         const isValid = await verifyPassword(password, user.passwordHash);
 
         if (!isValid) {
@@ -39,6 +41,33 @@ export async function POST(request: NextRequest) {
                 { error: "Invalid username or password" },
                 { status: 401 }
             );
+        }
+
+        // If encrypted data exists, verify it can be decrypted
+        if (user.encryptedUsername && user.encryptedPasswordHash) {
+            try {
+                const decryptedData = decryptUserData(
+                    {
+                        encryptedUsername: user.encryptedUsername,
+                        encryptedPasswordHash: user.encryptedPasswordHash,
+                    },
+                    password
+                );
+
+                // Verify decrypted data matches
+                if (
+                    decryptedData.username !== username ||
+                    decryptedData.passwordHash !== user.passwordHash
+                ) {
+                    console.warn(
+                        "Encrypted data verification failed for user:",
+                        user.id
+                    );
+                }
+            } catch (decryptError) {
+                console.error("Failed to decrypt user data:", decryptError);
+                // Continue with login even if decryption fails (backward compatibility)
+            }
         }
 
         // Generate session token

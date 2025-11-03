@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client"
+  output   = "../src/generated"
 }
 
 datasource db {
@@ -11,11 +12,13 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  username     String   @unique @db.VarChar(255)
-  passwordHash String   @map("password_hash") @db.Text
-  createdAt    DateTime @default(now()) @map("created_at")
-  files        File[]
+  id                  String   @id @default(uuid())
+  username            String   @unique @db.VarChar(255)
+  passwordHash        String   @map("password_hash") @db.Text
+  encryptedUsername   String?  @map("encrypted_username") @db.Text
+  encryptedPasswordHash String? @map("encrypted_password_hash") @db.Text
+  createdAt           DateTime @default(now()) @map("created_at")
+  files               File[]
 
   @@map("users")
 }

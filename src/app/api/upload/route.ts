@@ -3,10 +3,12 @@ import { verifyAuth } from "@/lib/auth/middleware";
 import { prisma } from "@/lib/prisma";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { hashFile } from "@/lib/auth/hash";
+import { encryptFileForUser } from "@/lib/fileEncryption";
+import { setSecretCookie } from "@/lib/auth/secretAccess";
 
 /**
  * POST /api/upload
- * Upload a file to Supabase storage
+ * Upload a file to Supabase storage with encryption
  */
 export async function POST(request: NextRequest) {
     try {
@@ -32,13 +34,27 @@ export async function POST(request: NextRequest) {
         const buffer = Buffer.from(await file.arrayBuffer());
         const filename = file.name;
 
-        // Upload to Supabase Storage
+        // Check if uploaded file is secret.key before encryption
+        let isSecretKey = false;
+        if (filename === "secret.key") {
+            const fileHash = await hashFile(buffer);
+            const expectedHash = process.env.SECRET_KEY_HASH;
+
+            if (expectedHash && fileHash === expectedHash) {
+                isSecretKey = true;
+            }
+        }
+
+        // Encrypt file using user-specific key
+        const encryptedBuffer = await encryptFileForUser(buffer, auth.userId);
+
+        // Upload encrypted file to Supabase Storage
         const supabaseAdmin = getSupabaseAdmin();
         const filePath = `${auth.userId}/${Date.now()}-${filename}`;
 
         const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
             .from("files")
-            .upload(filePath, buffer, {
+            .upload(filePath, encryptedBuffer, {
                 contentType: file.type,
                 upsert: false,
             });
@@ -65,32 +81,23 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // Check if uploaded file is secret.key
-        if (filename === "secret.key") {
-            const fileHash = await hashFile(buffer);
-            const expectedHash = process.env.SECRET_KEY_HASH;
-
-            if (expectedHash && fileHash === expectedHash) {
-                // Valid secret key - return redirect flag
-                return NextResponse.json(
-                    {
-                        message: "File uploaded successfully",
-                        fileId: fileRecord.id,
-                        redirect: "/secret",
-                    },
-                    { status: 200 }
-                );
-            }
-        }
-
-        return NextResponse.json(
+        // Create response
+        const response = NextResponse.json(
             {
                 message: "File uploaded successfully",
                 fileId: fileRecord.id,
                 url: urlData.publicUrl,
+                ...(isSecretKey && { redirect: "/secret" }),
             },
             { status: 200 }
         );
+
+        // If secret.key was uploaded, set secret cookie
+        if (isSecretKey) {
+            setSecretCookie(response);
+        }
+
+        return response;
     } catch (error) {
         console.error("Upload error:", error);
         return NextResponse.json(
