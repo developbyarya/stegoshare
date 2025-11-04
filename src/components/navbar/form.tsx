@@ -57,7 +57,7 @@ export default function Navbar() {
                     <div>
                         <ul className="space-y-2">  
                             <li><Link href="/" className="hover:text-blue-400" onClick={()=>setOpen(false)}>Dashboard</Link></li>
-                            <li><Link href="/text" className="hover:text-blue-400" onClick={()=>setOpen(false)}>Pesan Text </Link></li>
+                            <li><Link href="/message" className="hover:text-blue-400" onClick={()=>setOpen(false)}>Pesan Text </Link></li>
                             <li><Link href="/kirim_gambar" className="hover:text-blue-400" onClick={()=>setOpen(false)}>Kirim Pesan Gambar </Link></li>
                             <li><Link href="/upload" className="hover:text-blue-400" onClick={()=>setOpen(false)}>Kirim File</Link></li>
                         </ul>               

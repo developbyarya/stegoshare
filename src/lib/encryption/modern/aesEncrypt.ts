@@ -69,4 +69,3 @@ export function aesDecrypt(encryptedData: string, password: string): string {
 
     return decrypted.toString("utf8");
 }
-
