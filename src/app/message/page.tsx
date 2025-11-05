@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { useUser } from "@/app/contexts/UserContext/UserContext";
 import MessageComposer from "@/components/MessageComposer/page";
 import { superDecrypt } from "@/lib/encryption/superEncryption";
+import { Button } from "@/components/ui/button";
 
 export default function InnerMessagesPage() {
-  const { login,user } = useUser();
+  const { user } = useUser();
   const [inbox, setInbox] = useState<any[]>([]);
   const [sent, setSent] = useState<any[]>([]);
   const [selected, setSelected] = useState<any | null>(null);
@@ -61,8 +62,8 @@ export default function InnerMessagesPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "hsl(var(--background))", color: "hsl(var(--foreground))", padding: 24 }}>
-      <div className="mx-auto" style={{ maxWidth: 1200 }}>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800" >
+      <div className="container mx-auto px-4 py-8" style={{ maxWidth: 1200 }}>
         <div className="bg-[transparent] rounded shadow-sm overflow-hidden border" style={{ borderColor: "hsl(var(--border))" }}>
           <div className="flex">
             <aside style={{ width: 300, borderRight: "1px solid", borderColor: "hsl(var(--border))" }} className="p-4">
@@ -72,8 +73,8 @@ export default function InnerMessagesPage() {
               </div>
 
               <div className="mb-4">
-                <button onClick={loadInbox} className="w-full text-left px-3 py-2 rounded">Inbox</button>
-                <button onClick={loadSent} className="w-full text-left px-3 py-2 rounded mt-2">Sent</button>
+                <Button onClick={loadInbox} className="w-full text-left px-3 py-2 rounded">Inbox</Button>
+                <Button onClick={loadSent} className="w-full text-left px-3 py-2 rounded mt-2">Sent</Button>
               </div>
 
               <div className="mt-4">

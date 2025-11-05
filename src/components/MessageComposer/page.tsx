@@ -3,6 +3,9 @@ import  { useState } from "react";
 import UserSearch from "@/components/UserSearch/page";
 import { useUser } from "@/app/contexts/UserContext/UserContext";
 import { superEncrypt } from "@/lib/encryption/superEncryption";
+import { Form, FormField, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+
 
 export default function MessageComposer({ onSent }: { onSent?: () => void }) {
   const { user } = useUser();
@@ -56,7 +59,6 @@ export default function MessageComposer({ onSent }: { onSent?: () => void }) {
         <UserSearch onSelect={(u) => setRecipient(u)} />
         {recipient && <div className="text-xs text-[color:hsl(var(--muted-foreground))] mt-2">Recipient: {recipient.username ?? recipient.id}</div>}
       </div>
-
       <textarea value={body} onChange={(e) => setBody(e.target.value)} className="w-full px-3 py-2 border rounded h-28" style={{ borderColor: "hsl(var(--input))", backgroundColor: "hsl(var(--card))", color: "hsl(var(--foreground))" }} />
 
       <div className="mt-3 flex justify-end gap-2">
