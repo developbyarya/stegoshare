@@ -228,7 +228,7 @@ export default function MessagesPage() {
             <aside style={{ width: 300, borderRight: "1px solid", borderColor: "hsl(var(--border))" }} className="p-4">
               <div className="mb-3">
                 <div className="flex gap-2 items-center">
-                  <p className="text-xs text-gray-500">Logged in as: {userId?? "Dummy User"}</p>
+                  <p className="text-xs text-gray-500">Logged in as: {userId ?? "Dummy User"}</p>
 
                 </div>
                 <div className="flex gap-2 mt-3">
