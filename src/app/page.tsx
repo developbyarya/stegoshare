@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+
 import { verifySessionToken } from "@/lib/auth/session";
 
 export default async function Home() {

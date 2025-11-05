@@ -1,20 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState,useEffect} from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormField, FormLabel, FormMessage } from "@/components/ui/form";
+import { useUser } from "@/app/contexts/UserContext/UserContext"; 
+
+
 
 export default function LoginPage() {
     const router = useRouter();
-
+    const { login,user } = useUser(); 
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+
+    // useEffect(() => {
+    // if (user) {
+    //     console.log("Updated user:", user.username); // 
+    // }
+    // }, [user]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -24,37 +33,32 @@ export default function LoginPage() {
         try {
             const response = await fetch("/api/auth/login", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, password }),
-                credentials: "include", // Ensure cookies are included
+                credentials: "include",
             });
 
-            let data;
-            try {
-                data = await response.json();
-            } catch (parseError) {
-                setError("Invalid response from server");
-                setLoading(false);
-                return;
-            }
+            const data = await response.json().catch(() => null);
 
             if (!response.ok) {
-                setError(data.error || "Login failed");
+                setError(data?.error || "Login failed");
                 setLoading(false);
                 return;
             }
-
+            // Save user into context
+            login({ userId: data.user.id, username: data.user.username });
+            // const usernmn = user?.username;
             // Reset loading state and redirect to dashboard
             setLoading(false);
             console.log("Redirecting to dashboard");
 
+            //check data
+            // console.log("Logged in as:", data.username); // guaranteed
+            // console.log(usernmn)
             // Use window.location.href for reliable redirect after authentication
             window.location.href = "/dashboard";
         } catch (err) {
-            console.error("Login error:", err);
-            setError(err instanceof Error ? err.message : "An error occurred. Please try again.");
+            setError(err instanceof Error ? err.message : "An error occurred");
             setLoading(false);
         }
     };
@@ -64,9 +68,7 @@ export default function LoginPage() {
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold">Login</CardTitle>
-                    <CardDescription>
-                        Enter your credentials to access your account
-                    </CardDescription>
+                    <CardDescription>Enter your credentials to access your account</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Form onSubmit={handleSubmit}>
@@ -94,14 +96,8 @@ export default function LoginPage() {
                                 disabled={loading}
                             />
                         </FormField>
-                        {error && (
-                            <FormMessage className="mt-2">{error}</FormMessage>
-                        )}
-                        <Button
-                            type="submit"
-                            className="w-full mt-4"
-                            disabled={loading}
-                        >
+                        {error && <FormMessage className="mt-2">{error}</FormMessage>}
+                        <Button type="submit" className="w-full mt-4" disabled={loading}>
                             {loading ? "Logging in..." : "Login"}
                         </Button>
                     </Form>
@@ -109,10 +105,7 @@ export default function LoginPage() {
                 <CardFooter className="flex flex-col space-y-4">
                     <div className="text-sm text-center text-muted-foreground">
                         Don't have an account?{" "}
-                        <Link
-                            href="/register"
-                            className="text-primary hover:underline"
-                        >
+                        <Link href="/register" className="text-primary hover:underline">
                             Register here
                         </Link>
                     </div>
@@ -121,4 +114,3 @@ export default function LoginPage() {
         </div>
     );
 }
-
