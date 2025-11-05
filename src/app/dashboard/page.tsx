@@ -66,15 +66,6 @@ export default function DashboardPage() {
         }
     };
 
-    const handleLogout = async () => {
-        try {
-            await fetch("/api/auth/logout", { method: "POST" });
-            router.push("/login");
-        } catch (err) {
-            console.error("Logout error:", err);
-        }
-    };
-
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
             <div className="container mx-auto px-4 py-8">
