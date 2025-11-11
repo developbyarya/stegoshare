@@ -16,14 +16,12 @@ export default function MessageComposer({ onSent }: { onSent?: () => void }) {
   async function handleSend() {
     if (!user) return setStatus("Not logged in");
     if (!recipient) return setStatus("Please choose a recipient");
-    //checkig recipient
-    console.log(recipient);
+
     if (!body.trim()) return setStatus("Message is empty");
 
     setStatus("Encrypting...");
     try {
       const res = await fetch(`/api/users/${encodeURIComponent(recipient.id)}/publicKey`);
-      console.log("Check res : ",res);
       if (!res.ok) throw new Error("Failed to fetch public key");
       const j = await res.json();
       const publicKey = j.publicKey;

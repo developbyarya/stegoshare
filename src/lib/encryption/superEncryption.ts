@@ -58,19 +58,48 @@ export async function superEncrypt(plain: string, recipientPublicKeyPem: string)
  * @param key - AES decryption key
  * @returns Decrypted plain text
  */
-export async function superDecrypt(message: { ciphertext: string; encryptedKey: string }, privateJwk: JsonWebKey) {
-    // import private key
-    const privateKey = await importPrivateKeyFromJwk(privateJwk);
-    // decrypt AES raw
-    const encryptedKeyAb = base64ToAb(message.encryptedKey);
-    const rawAes = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, encryptedKeyAb);
-    const aesKey = await importAesRaw(rawAes);
-    // decrypt ciphertext
-    const step2 = await aesDecryptString(message.ciphertext, aesKey);
-    // reverse classical layers: XOR -> Vigenere -> Caesar
-    const step3 = xorDecrypt(step2, "Kjsdo19_123");
-    const step4 = vigenereDecrypt(step3, "Kd129Nj");
-    const plain = caesarDecrypt(step4, 3);
-    return plain;
-}
 
+export async function superDecrypt(
+  message: { ciphertext: string; encryptedKey: string },
+  privateJwk: JsonWebKey
+) {
+  try {
+    // 1️⃣ Import RSA private key
+    const privateKey = await importPrivateKeyFromJwk(privateJwk);
+
+    // 2️⃣ Decode encrypted AES key dari base64 -> ArrayBuffer
+    const encryptedKeyAb = base64ToAb(message.encryptedKey);
+
+    // 3️⃣ RSA decrypt untuk mendapatkan raw AES key
+    let rawAes: ArrayBuffer;
+    try {
+      rawAes = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, encryptedKeyAb);
+    } catch (err) {
+      console.error("RSA decrypt gagal:", err);
+      throw new Error("Gagal mendekripsi AES key (RSA-OAEP). Pastikan pasangan kunci cocok.");
+    }
+
+    // 4️⃣ Validasi panjang AES key
+    const keyBytes = new Uint8Array(rawAes);
+    console.log("AES raw key length:", keyBytes.length, "bytes");
+    if (![16, 24, 32].includes(keyBytes.length)) {
+      throw new Error(`Panjang AES key tidak valid (${keyBytes.length}). Harus 16/24/32 byte.`);
+    }
+
+    // 5️⃣ Import AES key
+    const aesKey = await importAesRaw(rawAes);
+
+    // 6️⃣ Decrypt ciphertext (AES)
+    const step2 = await aesDecryptString(message.ciphertext, aesKey);
+
+    // 7️⃣ Reverse classical layers
+    const step3 = xorDecrypt(step2, XOR_KEY);
+    const step4 = vigenereDecrypt(step3, VIGENERE_KEY);
+    const plain = caesarDecrypt(step4, CAESAR_SHIFT);
+
+    return plain;
+  } catch (err) {
+    console.error("superDecrypt error:", err);
+    throw err;
+  }
+}

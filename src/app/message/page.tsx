@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState,useRef } from "react";
 import { useUser } from "@/app/contexts/UserContext/UserContext";
 import MessageComposer from "@/components/MessageComposer/page";
 import { superDecrypt } from "@/lib/encryption/superEncryption";
 import { Button } from "@/components/ui/button";
-
+import { getPrivateKeyJwk } from "@/lib/encryption/modern/keyStore";
 export default function InnerMessagesPage() {
   const { user } = useUser();
   const [inbox, setInbox] = useState<any[]>([]);
@@ -14,47 +14,63 @@ export default function InnerMessagesPage() {
   const [status, setStatus] = useState<string | null>(null);
 
   const userName = user?.username ;
+
+  const didFetch = useRef(false);
   //mengetes tampilkan username
-  console.log("nama user : ", userName);
+  // console.log("nama user check : ", userName);
   useEffect(() => {
-    if (user) {
-      loadInbox();
-      loadSent();
-    }
-  }, [user]);
+    if (!user?.userId || didFetch.current) return;
+    didFetch.current = true;
+    loadInbox();
+    loadSent();
+
+  }, [user?.userId]);
 
   async function loadInbox() {
-    if (!user) return;
-    try {
-      const res = await fetch(`/api/messages?userId=${encodeURIComponent(user.userId)}`);
-      const data = await res.json();
-      setInbox(Array.isArray(data) ? data : []);
-    } catch (e) {
-      console.error(e);
-      setStatus("Failed to load inbox");
+    if (!user?.userId) return; // ensure safe call
+    console.log("load inbox");
+    const res = await fetch(`/api/messages?receivedBy=${encodeURIComponent(user.userId)}`);
+    if (!res.ok) {
+      console.warn("Inbox fetch failed:", await res.text());
+      setInbox([]);
+      return;
     }
+
+    const data = await res.json();
+    setInbox(data ?? []);
   }
 
   async function loadSent() {
-    if (!user) return;
-    try {
-      const res = await fetch(`/api/messages?sentBy=${encodeURIComponent(user.userId)}`);
-      const data = await res.json();
-      setSent(Array.isArray(data) ? data : []);
-    } catch (e) {
-      console.error(e);
-      setStatus("Failed to load sent");
+    console.log("load sent");
+    if (!user?.userId) return;
+
+    const res = await fetch(`/api/messages?sentBy=${encodeURIComponent(user.userId)}`);
+    if (!res.ok) {
+      console.warn("Sent fetch failed:", await res.text());
+      setSent([]);
+      return;
     }
+    const data = await res.json();
+    setSent(data ?? []);
   }
+
 
   async function openMessage(msg: any) {
     setSelected(msg);
-    const s = localStorage.getItem("rsa_private_jwk");
-    if (!s) return setStatus("Private key not found (import or generate)");
     try {
-      const privateJwk = JSON.parse(s);
-      const plain = await superDecrypt({ ciphertext: msg.ciphertext, encryptedKey: msg.encryptedKey }, privateJwk);
+      const privateJwk = await getPrivateKeyJwk();
+      if (!privateJwk) {
+        setStatus("Private key not found (import or generate)");
+        return;
+      }
+
+      const plain = await superDecrypt(
+        { ciphertext: msg.ciphertext, encryptedKey: msg.encryptedKey },
+        privateJwk
+      );
+
       setSelected({ ...msg, plain });
+      setStatus(null); // reset status jika sukses
     } catch (e) {
       console.error(e);
       setStatus("Decrypt failed");
@@ -89,9 +105,17 @@ export default function InnerMessagesPage() {
                   <div className="mt-2">
                     {(inbox).length === 0 ? <div className="text-sm">No messages</div> : inbox.map((m) => (
                       <div key={m.id} className="p-3 border-b cursor-pointer" onClick={() => openMessage(m)}>
-                        <div className="font-medium">{m.sender?.username ?? m.senderId}</div>
-                        <div className="text-xs text-[color:hsl(var(--muted-foreground))]">{m.ciphertext.slice(0, 48)}...</div>
+                        <div className="text-xs ">{m.sender?.username ?? m.senderId}</div>
+                        <div className="font-medium text-[color:hsl(var(--muted-foreground))]">{m.ciphertext.slice(0, 25)}...</div>
                       </div>
+                      
+                    ))}
+                    {(sent).length === 0 ? <div className="text-sm"></div> : sent.map((m) => (
+                      <div key={m.id} className="p-3 border-b cursor-pointer" onClick={() => openMessage(m)}>
+                        <div className="text-xs ">{m.sender?.username ?? m.senderId}</div>
+                        <div className="font-medium text-[color:hsl(var(--muted-foreground))]">{m.ciphertext.slice(0, 25)}...</div>
+                      </div>
+                      
                     ))}
                   </div>
                 </div>

@@ -13,7 +13,7 @@ import { useUser } from "@/app/contexts/UserContext/UserContext";
 
 export default function LoginPage() {
     const router = useRouter();
-    const { login,user } = useUser(); 
+    const { login } = useUser(); 
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");

@@ -2,88 +2,92 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
-    try {
-        const { searchParams } = new URL(req.url);
-        const userId = searchParams.get("userId");
-        const sentBy = searchParams.get("sentBy");
+  try {
+    const { searchParams } = new URL(req.url);
+    const sentBy = searchParams.get("sentBy");
+    const receivedBy = searchParams.get("receivedBy");
+    const user = searchParams.get("user");
 
-        if (!userId && !sentBy) {
-            return NextResponse.json({ error: "Missing userId or sentBy" }, { status: 400 });
-        }
+    let whereClause = {};
 
-        if (userId && sentBy) {
-            return NextResponse.json({ error: "Provide only userId or sentBy, not both" }, { status: 400 });
-        }
-
-        if (userId) {
-            const messages = await prisma.$queryRaw<any[]>`
-        SELECT m.id,
-               m.sender_id AS "senderId",
-               m.recipient_id AS "recipientId",
-               m.ciphertext,
-               m.encrypted_key AS "encryptedKey",
-               m.created_at AS "createdAt",
-               json_build_object('id', s.id, 'username', s.username) AS sender
-        FROM messages m
-        JOIN users s ON s.id = m.sender_id
-        WHERE m.recipient_id = ${userId}
-        ORDER BY m.created_at DESC
-      `;
-            return NextResponse.json(messages, { status: 200 });
-        }
-
-        if (sentBy) {
-            const messages = await prisma.$queryRaw<any[]>`
-        SELECT m.id,
-               m.sender_id AS "senderId",
-               m.recipient_id AS "recipientId",
-               m.ciphertext,
-               m.encrypted_key AS "encryptedKey",
-               m.created_at AS "createdAt",
-               json_build_object('id', s.id, 'username', s.username) AS sender
-        FROM messages m
-        JOIN users s ON s.id = m.sender_id
-        WHERE m.sender_id = ${sentBy}
-        ORDER BY m.created_at DESC
-      `;
-            return NextResponse.json(messages, { status: 200 });
-        }
-
-        return NextResponse.json([], { status: 200 });
-    } catch (error) {
-        return NextResponse.json({ error: "Failed to load messages" }, { status: 500 });
+    if (sentBy) {
+      whereClause = { senderId: sentBy };
+    } else if (receivedBy) {
+      whereClause = { recipientId: receivedBy };
+    } else if (user) {
+      whereClause = {
+        OR: [{ senderId: user }, { recipientId: user }],
+      };
+    } else {
+      return NextResponse.json(
+        { error: "Missing query. Use ?sentBy=, ?receivedBy=, or ?user=" },
+        { status: 400 }
+      );
     }
+
+    const messages = await prisma.message.findMany({
+      where: whereClause,
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        senderId: true,
+        recipientId: true,
+        ciphertext: true,
+        encryptedKey: true,
+        createdAt: true,
+      },
+    });
+
+    return NextResponse.json(messages, { status: 200 });
+
+  } catch (error) {
+    console.error("GET /messages error:", error);
+    return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 });
+  }
 }
+
 
 export async function POST(req: NextRequest) {
-    try {
-        const body = await req.json();
-        const { senderId, recipientId, ciphertext, encryptedKey } = body ?? {};
+  try {
+    const body = await req.json();
+    const { senderId, recipientId, ciphertext, encryptedKey } = body ?? {};
 
-        if (!senderId || !recipientId || !ciphertext || !encryptedKey) {
-            return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-        }
-
-        // Ensure both users exist
-        const [sender, recipient] = await Promise.all([
-            prisma.user.findUnique({ where: { id: senderId } }),
-            prisma.user.findUnique({ where: { id: recipientId } }),
-        ]);
-
-        if (!sender) return NextResponse.json({ error: "Sender not found" }, { status: 404 });
-        if (!recipient) return NextResponse.json({ error: "Recipient not found" }, { status: 404 });
-
-        const rows = await prisma.$queryRaw<any[]>`
-      INSERT INTO messages (sender_id, recipient_id, ciphertext, encrypted_key)
-      VALUES (${senderId}, ${recipientId}, ${ciphertext}, ${encryptedKey})
-      RETURNING id, sender_id AS "senderId", recipient_id AS "recipientId", ciphertext, encrypted_key AS "encryptedKey", created_at AS "createdAt"
-    `;
-
-        const saved = rows?.[0] ?? null;
-        return NextResponse.json(saved, { status: 201 });
-    } catch (error) {
-        return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
+    if (!senderId || !recipientId || !ciphertext || !encryptedKey) {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
+
+    const [sender, recipient] = await Promise.all([
+      prisma.user.findUnique({ where: { id: senderId } }),
+      prisma.user.findUnique({ where: { id: recipientId } }),
+    ]);
+
+    if (!sender) return NextResponse.json({ error: "Sender not found" }, { status: 404 });
+    if (!recipient) return NextResponse.json({ error: "Recipient not found" }, { status: 404 });
+
+    const saved = await prisma.message.create({
+      data: {
+        senderId,
+        recipientId,
+        ciphertext,
+        encryptedKey,
+      },
+      select: {
+        id: true,
+        senderId: true,
+        recipientId: true,
+        ciphertext: true,
+        encryptedKey: true,
+        createdAt: true,
+      },
+    });
+
+    return NextResponse.json(saved, { status: 201 });
+
+  } catch (error) {
+    console.error("Message Insert Error →", error);
+    return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
+  }
 }
+
 
 
