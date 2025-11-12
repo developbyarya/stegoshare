@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useUser } from "@/app/contexts/UserContext/UserContext";
 import MessageComposer from "@/components/MessageComposer/page";
 import { superDecrypt } from "@/lib/encryption/superEncryption";
 import { Button } from "@/components/ui/button";
-
+import { getPrivateKeyJwk } from "@/lib/encryption/modern/keyStore";
 export default function InnerMessagesPage() {
   const { user } = useUser();
   const [inbox, setInbox] = useState<any[]>([]);
@@ -15,13 +15,14 @@ export default function InnerMessagesPage() {
 
   const userName = user?.username;
   //mengetes tampilkan username
-  console.log("nama user : ", userName);
+  // console.log("nama user check : ", userName);
   useEffect(() => {
-    if (user) {
-      loadInbox();
-      loadSent();
-    }
-  }, [user]);
+    if (!user?.userId || didFetch.current) return;
+    didFetch.current = true;
+    loadInbox();
+    loadSent();
+
+  }, [user?.userId]);
 
   async function loadInbox() {
     if (!user) return;
@@ -84,16 +85,19 @@ export default function InnerMessagesPage() {
   }
 
   async function loadSent() {
-    if (!user) return;
-    try {
-      const res = await fetch(`/api/messages?sentBy=${encodeURIComponent(user.userId)}`);
-      const data = await res.json();
-      setSent(Array.isArray(data) ? data : []);
-    } catch (e) {
-      console.error(e);
-      setStatus("Failed to load sent");
+    console.log("load sent");
+    if (!user?.userId) return;
+
+    const res = await fetch(`/api/messages?sentBy=${encodeURIComponent(user.userId)}`);
+    if (!res.ok) {
+      console.warn("Sent fetch failed:", await res.text());
+      setSent([]);
+      return;
     }
+    const data = await res.json();
+    setSent(data ?? []);
   }
+
 
   async function openMessage(msg: any) {
     setSelected(msg);

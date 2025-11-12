@@ -9,14 +9,13 @@ export async function generateRSAKeyPair() {
       name: "RSA-OAEP",
       modulusLength: 4096,
       publicExponent: new Uint8Array([1, 0, 1]),
-      hash: "SHA-256"
+      hash: "SHA-256",
     },
-    true,
+    true, // extractable true so we can export keys
     ["encrypt", "decrypt"]
   );
 }
 
-// EXPORT PUBLIC KEY to PEM
 export async function exportPublicKeyToPem(key: CryptoKey): Promise<string> {
   const spki = await webCrypto.subtle.exportKey("spki", key);
   const b64 = btoa(String.fromCharCode(...new Uint8Array(spki)));
@@ -25,7 +24,14 @@ export async function exportPublicKeyToPem(key: CryptoKey): Promise<string> {
   return `-----BEGIN PUBLIC KEY-----\n${chunks}\n-----END PUBLIC KEY-----`;
 }
 
-// IMPORT PUBLIC KEY from PEM
+export async function exportPrivateKeyToJwk(key: CryptoKey): Promise<JsonWebKey> {
+  return crypto.subtle.exportKey("jwk", key);
+}
+
+export async function importPrivateKeyFromJwk(jwk: JsonWebKey): Promise<CryptoKey> {
+  return crypto.subtle.importKey("jwk", jwk, { name: "RSA-OAEP", hash: "SHA-256" }, true, ["decrypt"]);
+}
+
 export async function importPublicKeyFromPem(pem: string): Promise<CryptoKey> {
   const pemHeader = "-----BEGIN PUBLIC KEY-----";
   const pemFooter = "-----END PUBLIC KEY-----";
