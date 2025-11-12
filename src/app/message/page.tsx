@@ -17,8 +17,6 @@ export default function InnerMessagesPage() {
   //mengetes tampilkan username
   // console.log("nama user check : ", userName);
   useEffect(() => {
-    if (!user?.userId || didFetch.current) return;
-    didFetch.current = true;
     loadInbox();
     loadSent();
 
@@ -27,11 +25,11 @@ export default function InnerMessagesPage() {
   async function loadInbox() {
     if (!user) return;
     try {
-      const res = await fetch(`/api/messages?userId=${encodeURIComponent(user.userId)}`);
+      const res = await fetch(`/api/messages?receivedBy=${encodeURIComponent(user.userId)}`);
       const data = await res.json();
       const messages = Array.isArray(data) ? data : [];
 
-      // Automatically decrypt messages if private key is available
+      console.log("messages check : ", messages);
       const privateKeyStr = localStorage.getItem("rsa_private_jwk");
       if (privateKeyStr) {
         try {

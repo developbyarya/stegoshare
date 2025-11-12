@@ -12,8 +12,8 @@ function abToBase64(buf: ArrayBuffer) {
   return btoa(String.fromCharCode(...new Uint8Array(buf)));
 }
 
-export async function exportAesRaw(aesKey: CryptoKey): Promise<ArrayBuffer> {
-  return crypto.subtle.exportKey("raw", aesKey);
+function base64ToAb(b64: string): ArrayBuffer {
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
 }
 
 export async function generateAesKey() {
@@ -39,8 +39,7 @@ export async function aesDecryptString(combinedB64: string, aesKey: CryptoKey) {
   return new TextDecoder().decode(pt);
 }
 
-
-export async function exportAesRaw(aesKey: CryptoKey) {
+export async function exportAesRaw(aesKey: CryptoKey): Promise<ArrayBuffer> {
   return webCrypto.subtle.exportKey("raw", aesKey);
 }
 export async function importAesRaw(raw: ArrayBuffer) {

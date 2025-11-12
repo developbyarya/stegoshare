@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { hashFile } from "@/lib/auth/hash";
 import { encryptFileForUser } from "@/lib/fileEncryption";
 import { setSecretCookie } from "@/lib/auth/secretAccess";
+import { getSecretImageHash, isImageFile } from "@/lib/auth/secretImage";
 
 /**
  * POST /api/upload
@@ -34,17 +35,34 @@ export async function POST(request: NextRequest) {
         const buffer = Buffer.from(await file.arrayBuffer());
         const filename = file.name;
 
-        // Check if uploaded file is secret.key before encryption
-        let isSecretKey = false;
-        if (filename === "secret.key") {
-            const fileHash = await hashFile(buffer);
-            const expectedHash = process.env.SECRET_KEY_HASH;
+        // Check if uploaded file is the secret image by comparing hash
+        // The secret file is an image, and we compare its hash to the secret image hash
+        // If it's the secret file, don't upload it - just grant access and redirect
+        if (isImageFile(file)) {
+            try {
+                const fileHash = await hashFile(buffer);
+                const secretImageHash = await getSecretImageHash();
 
-            if (expectedHash && fileHash === expectedHash) {
-                isSecretKey = true;
+                if (fileHash === secretImageHash) {
+                    // This is the secret file - don't upload it, just grant access
+                    const response = NextResponse.json(
+                        {
+                            message: "Secret file verified. Access granted.",
+                            redirect: "/secret",
+                        },
+                        { status: 200 }
+                    );
+
+                    setSecretCookie(response);
+                    return response;
+                }
+            } catch (error) {
+                // If secret image doesn't exist, log but don't fail the upload
+                console.error("Error checking secret image hash:", error);
             }
         }
 
+        // Not the secret file - proceed with normal upload
         // Encrypt file using user-specific key
         const encryptedBuffer = await encryptFileForUser(buffer, auth.userId);
 
@@ -81,23 +99,15 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // Create response
-        const response = NextResponse.json(
+        // Return success response for normal file upload
+        return NextResponse.json(
             {
                 message: "File uploaded successfully",
                 fileId: fileRecord.id,
                 url: urlData.publicUrl,
-                ...(isSecretKey && { redirect: "/secret" }),
             },
             { status: 200 }
         );
-
-        // If secret.key was uploaded, set secret cookie
-        if (isSecretKey) {
-            setSecretCookie(response);
-        }
-
-        return response;
     } catch (error) {
         console.error("Upload error:", error);
         return NextResponse.json(

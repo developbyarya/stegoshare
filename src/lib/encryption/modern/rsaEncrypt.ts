@@ -24,14 +24,6 @@ export async function exportPublicKeyToPem(key: CryptoKey): Promise<string> {
   return `-----BEGIN PUBLIC KEY-----\n${chunks}\n-----END PUBLIC KEY-----`;
 }
 
-export async function exportPrivateKeyToJwk(key: CryptoKey): Promise<JsonWebKey> {
-  return crypto.subtle.exportKey("jwk", key);
-}
-
-export async function importPrivateKeyFromJwk(jwk: JsonWebKey): Promise<CryptoKey> {
-  return crypto.subtle.importKey("jwk", jwk, { name: "RSA-OAEP", hash: "SHA-256" }, true, ["decrypt"]);
-}
-
 export async function importPublicKeyFromPem(pem: string): Promise<CryptoKey> {
   const pemHeader = "-----BEGIN PUBLIC KEY-----";
   const pemFooter = "-----END PUBLIC KEY-----";
