@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { senderId, recipientId, ciphertext, encryptedKey } = body ?? {};
+        console.log("Check body : ", body);
 
         if (!senderId || !recipientId || !ciphertext || !encryptedKey) {
             return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -73,13 +74,24 @@ export async function POST(req: NextRequest) {
         if (!sender) return NextResponse.json({ error: "Sender not found" }, { status: 404 });
         if (!recipient) return NextResponse.json({ error: "Recipient not found" }, { status: 404 });
 
-        const rows = await prisma.$queryRaw<any[]>`
-      INSERT INTO messages (sender_id, recipient_id, ciphertext, encrypted_key)
-      VALUES (${senderId}, ${recipientId}, ${ciphertext}, ${encryptedKey})
-      RETURNING id, sender_id AS "senderId", recipient_id AS "recipientId", ciphertext, encrypted_key AS "encryptedKey", created_at AS "createdAt"
-    `;
+        // Use Prisma create method to ensure all defaults (like id and createdAt) are handled properly
+        const saved = await prisma.message.create({
+            data: {
+                senderId,
+                recipientId,
+                ciphertext,
+                encryptedKey,
+            },
+            select: {
+                id: true,
+                senderId: true,
+                recipientId: true,
+                ciphertext: true,
+                encryptedKey: true,
+                createdAt: true,
+            },
+        });
 
-        const saved = rows?.[0] ?? null;
         return NextResponse.json(saved, { status: 201 });
     } catch (error) {
         return NextResponse.json({ error: "Failed to send message" }, { status: 500 });

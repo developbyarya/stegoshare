@@ -32,6 +32,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("app_user");
+    // Clear private key on logout to prevent using wrong key for different users
+    localStorage.removeItem("rsa_private_jwk");
   };
 
   return (

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/hash";
 import { encryptUserData } from "@/lib/auth/userDataEncryption";
+import { generateRSAKeyPair, exportPublicKeyToPem, exportPrivateKeyToJwk } from "@/lib/encryption/modern/rsaEncrypt";
+import { aesEncrypt } from "@/lib/encryption/modern/aesEncrypt";
 
 /**
  * POST /api/auth/register
@@ -47,6 +49,15 @@ export async function POST(request: NextRequest) {
             password
         );
 
+        // Generate RSA key pair for message encryption
+        const keyPair = await generateRSAKeyPair();
+        const publicKeyPem = await exportPublicKeyToPem(keyPair.publicKey);
+        const privateKeyJwk = await exportPrivateKeyToJwk(keyPair.privateKey);
+
+        // Encrypt private key with user's password for database storage
+        const privateKeyJson = JSON.stringify(privateKeyJwk);
+        const encryptedPrivateKey = aesEncrypt(privateKeyJson, password);
+
         // Create user with both plain and encrypted data
         // Plain data kept for backward compatibility and login lookup
         const user = await prisma.user.create({
@@ -55,11 +66,17 @@ export async function POST(request: NextRequest) {
                 passwordHash, // Plain hash for verification
                 encryptedUsername: encryptedData.encryptedUsername,
                 encryptedPasswordHash: encryptedData.encryptedPasswordHash,
+                publicKey: publicKeyPem, // Store public key for receiving encrypted messages
+                encryptedPrivateKey: encryptedPrivateKey, // Store encrypted private key for retrieval on login
             },
         });
 
         return NextResponse.json(
-            { message: "User registered successfully", userId: user.id },
+            {
+                message: "User registered successfully",
+                userId: user.id,
+                privateKey: privateKeyJwk // Return private key to be stored in localStorage
+            },
             { status: 201 }
         );
     } catch (error) {

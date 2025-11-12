@@ -4,11 +4,14 @@
  */
 
 import { caesarEncrypt, caesarDecrypt } from "./classical/caesarCipher";
-import { vigenereEncrypt,vigenereDecrypt } from "./classical/vigenereCipher";
-import { aesEncryptString,aesDecryptString,exportAesRaw,importAesRaw,generateAesKey} from "./modern/aesEncryptKey";
+import { vigenereEncrypt, vigenereDecrypt } from "./classical/vigenereCipher";
+import { aesEncryptString, aesDecryptString, exportAesRaw, importAesRaw, generateAesKey } from "./modern/aesEncryptKey";
 import { xorEncrypt, xorDecrypt } from "./modern/xorEncrypt";
-import {importPrivateKeyFromJwk,importPublicKeyFromPem} from "./modern/rsaEncrypt"
+import { importPrivateKeyFromJwk, importPublicKeyFromPem } from "./modern/rsaEncrypt"
 
+import { getWebCrypto } from "./webCrypto";
+
+const webCrypto = getWebCrypto();
 
 const CAESAR_SHIFT = 3;
 const VIGENERE_KEY = "Kd129Nj";
@@ -45,7 +48,7 @@ export async function superEncrypt(plain: string, recipientPublicKeyPem: string)
     // export raw AES key and encrypt with recipient RSA public key
     const rawAes = await exportAesRaw(aesKey);
     const recipientKey = await importPublicKeyFromPem(recipientPublicKeyPem);
-    const encryptedKeyAb = await crypto.subtle.encrypt({ name: "RSA-OAEP" }, recipientKey, rawAes);
+    const encryptedKeyAb = await webCrypto.subtle.encrypt({ name: "RSA-OAEP" }, recipientKey, rawAes);
     const encryptedKeyB64 = abToBase64(encryptedKeyAb);
 
     return { ciphertext, encryptedKey: encryptedKeyB64 };
@@ -53,24 +56,48 @@ export async function superEncrypt(plain: string, recipientPublicKeyPem: string)
 }
 
 /**
- * Super decrypt: Apply AES decryption first, then Caesar decryption
- * @param cipherText - Encrypted text
- * @param key - AES decryption key
+ * Super decrypt: Reverse the encryption process
+ * Decrypt AES first, then reverse classical layers: XOR -> Vigenere -> Caesar
+ * @param message - Object containing ciphertext and encryptedKey
+ * @param privateJwk - Private key in JWK format for RSA decryption
  * @returns Decrypted plain text
  */
 export async function superDecrypt(message: { ciphertext: string; encryptedKey: string }, privateJwk: JsonWebKey) {
-    // import private key
-    const privateKey = await importPrivateKeyFromJwk(privateJwk);
-    // decrypt AES raw
-    const encryptedKeyAb = base64ToAb(message.encryptedKey);
-    const rawAes = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, encryptedKeyAb);
-    const aesKey = await importAesRaw(rawAes);
-    // decrypt ciphertext
-    const step2 = await aesDecryptString(message.ciphertext, aesKey);
-    // reverse classical layers: XOR -> Vigenere -> Caesar
-    const step3 = xorDecrypt(step2, "Kjsdo19_123");
-    const step4 = vigenereDecrypt(step3, "Kd129Nj");
-    const plain = caesarDecrypt(step4, 3);
-    return plain;
+    try {
+        // Step 1: Import private key
+        const privateKey = await importPrivateKeyFromJwk(privateJwk);
+
+        // Step 2: Decrypt the AES key using RSA private key
+        const encryptedKeyAb = base64ToAb(message.encryptedKey);
+        let rawAes: ArrayBuffer;
+        try {
+            rawAes = await webCrypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, encryptedKeyAb);
+        } catch (e) {
+            throw new Error(`RSA decryption failed: ${e instanceof Error ? e.message : String(e)}. The message may be encrypted with a different public key.`);
+        }
+
+        const aesKey = await importAesRaw(rawAes);
+
+        // Step 3: Decrypt the ciphertext using AES (this gives us the XOR-encrypted hex string)
+        let xorEncryptedHex: string;
+        try {
+            xorEncryptedHex = await aesDecryptString(message.ciphertext, aesKey);
+        } catch (e) {
+            throw new Error(`AES decryption failed: ${e instanceof Error ? e.message : String(e)}. The ciphertext may be corrupted.`);
+        }
+
+        // Step 4: Reverse classical layers in reverse order: XOR -> Vigenere -> Caesar
+        const vigenereEncrypted = xorDecrypt(xorEncryptedHex, XOR_KEY);
+        const caesarEncrypted = vigenereDecrypt(vigenereEncrypted, VIGENERE_KEY);
+        const plain = caesarDecrypt(caesarEncrypted, CAESAR_SHIFT);
+
+        return plain;
+    } catch (e) {
+        // Re-throw with more context
+        if (e instanceof Error) {
+            throw e;
+        }
+        throw new Error(`Decryption failed: ${String(e)}`);
+    }
 }
 

@@ -50,6 +50,18 @@ export default function RegisterPage() {
                 return;
             }
 
+            // Store private key in localStorage for message decryption
+            if (data.privateKey) {
+                // Ensure privateKey is stored correctly (it should already be an object from the API)
+                const privateKeyToStore = typeof data.privateKey === 'string'
+                    ? JSON.parse(data.privateKey)
+                    : data.privateKey;
+                localStorage.setItem("rsa_private_jwk", JSON.stringify(privateKeyToStore));
+                console.log("Private key stored successfully");
+            } else {
+                console.warn("No private key received from registration");
+            }
+
             // Redirect to login after successful registration
             router.push("/login?registered=true");
         } catch (err) {

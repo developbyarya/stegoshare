@@ -40,7 +40,6 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
             algorithms: ["HS256"],
         });
 
-        console.log("Token verified successfully:", decoded);
 
         // Verify the payload has required fields
         if (decoded.userId && decoded.username) {

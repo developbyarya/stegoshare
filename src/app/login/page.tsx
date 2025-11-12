@@ -1,19 +1,19 @@
 "use client";
 
-import { useState,useEffect} from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormField, FormLabel, FormMessage } from "@/components/ui/form";
-import { useUser } from "@/app/contexts/UserContext/UserContext"; 
+import { useUser } from "@/app/contexts/UserContext/UserContext";
 
 
 
 export default function LoginPage() {
     const router = useRouter();
-    const { login,user } = useUser(); 
+    const { login, user } = useUser();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -47,7 +47,17 @@ export default function LoginPage() {
             }
             // Save user into context
             login({ userId: data.user.id, username: data.user.username });
-            // const usernmn = user?.username;
+
+            // Store private key in localStorage if provided (decrypted from database)
+            if (data.privateKey) {
+                // Ensure privateKey is stored correctly
+                const privateKeyToStore = typeof data.privateKey === 'string'
+                    ? JSON.parse(data.privateKey)
+                    : data.privateKey;
+                localStorage.setItem("rsa_private_jwk", JSON.stringify(privateKeyToStore));
+                console.log("Private key stored from database");
+            }
+
             // Reset loading state and redirect to dashboard
             setLoading(false);
             console.log("Redirecting to dashboard");

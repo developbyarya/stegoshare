@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth/hash";
 import { generateSessionToken } from "@/lib/auth/session";
 import { decryptUserData } from "@/lib/auth/userDataEncryption";
+import { aesDecrypt } from "@/lib/encryption/modern/aesEncrypt";
 
 /**
  * POST /api/auth/login
@@ -24,6 +25,16 @@ export async function POST(request: NextRequest) {
         // Find user (using plain username for lookup)
         const user = await prisma.user.findUnique({
             where: { username },
+            select: {
+                id: true,
+                username: true,
+                passwordHash: true,
+                encryptedUsername: true,
+                encryptedPasswordHash: true,
+                publicKey: true,
+                encryptedPrivateKey: true,
+                createdAt: true,
+            },
         });
 
         if (!user) {
@@ -70,6 +81,19 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        // Decrypt private key if available (for users who registered after this feature was added)
+        let decryptedPrivateKey: JsonWebKey | null = null;
+        if (user.encryptedPrivateKey) {
+            try {
+                const privateKeyJson = aesDecrypt(user.encryptedPrivateKey, password);
+                decryptedPrivateKey = JSON.parse(privateKeyJson);
+            } catch (decryptError) {
+                console.error("Failed to decrypt private key for user:", user.id, decryptError);
+                // Don't fail login if private key decryption fails - user might have changed password
+                // or there's a data corruption issue
+            }
+        }
+
         // Generate session token
         const token = await generateSessionToken({
             userId: user.id,
@@ -77,16 +101,20 @@ export async function POST(request: NextRequest) {
         });
 
         // Create response with cookie
-        const response = NextResponse.json(
-            {
-                message: "Login successful",
-                user: {
-                    id: user.id,
-                    username: user.username,
-                },
+        const responseData: any = {
+            message: "Login successful",
+            user: {
+                id: user.id,
+                username: user.username,
             },
-            { status: 200 }
-        );
+        };
+
+        // Include private key in response if successfully decrypted
+        if (decryptedPrivateKey) {
+            responseData.privateKey = decryptedPrivateKey;
+        }
+
+        const response = NextResponse.json(responseData, { status: 200 });
 
         // Set session cookie
         response.cookies.set("session", token, {

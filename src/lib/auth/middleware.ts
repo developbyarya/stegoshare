@@ -23,9 +23,7 @@ export async function verifyAuth(request: NextRequest): Promise<{
         return null;
     }
 
-    console.log("Token from cookie:", token);
     const payload = await verifySessionToken(token);
-    console.log("Payload:", payload);
     return payload;
 }
 

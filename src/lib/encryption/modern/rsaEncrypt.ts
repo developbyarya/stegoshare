@@ -1,6 +1,10 @@
+import { getWebCrypto } from "../webCrypto";
+
+const webCrypto = getWebCrypto();
+
 // Generate RSA Keypair
 export async function generateRSAKeyPair() {
-  return crypto.subtle.generateKey(
+  return webCrypto.subtle.generateKey(
     {
       name: "RSA-OAEP",
       modulusLength: 4096,
@@ -14,7 +18,7 @@ export async function generateRSAKeyPair() {
 
 // EXPORT PUBLIC KEY to PEM
 export async function exportPublicKeyToPem(key: CryptoKey): Promise<string> {
-  const spki = await crypto.subtle.exportKey("spki", key);
+  const spki = await webCrypto.subtle.exportKey("spki", key);
   const b64 = btoa(String.fromCharCode(...new Uint8Array(spki)));
   const chunks = b64.match(/.{1,64}/g)!.join("\n");
 
@@ -29,7 +33,7 @@ export async function importPublicKeyFromPem(pem: string): Promise<CryptoKey> {
 
   const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0)).buffer;
 
-  return crypto.subtle.importKey(
+  return webCrypto.subtle.importKey(
     "spki",
     binaryDer,
     { name: "RSA-OAEP", hash: "SHA-256" },
@@ -40,12 +44,12 @@ export async function importPublicKeyFromPem(pem: string): Promise<CryptoKey> {
 
 // EXPORT PRIVATE KEY to JWK
 export async function exportPrivateKeyToJwk(key: CryptoKey) {
-  return crypto.subtle.exportKey("jwk", key);
+  return webCrypto.subtle.exportKey("jwk", key);
 }
 
 // IMPORT PRIVATE KEY from JWK
 export async function importPrivateKeyFromJwk(jwk: JsonWebKey): Promise<CryptoKey> {
-  return crypto.subtle.importKey(
+  return webCrypto.subtle.importKey(
     "jwk",
     jwk,
     { name: "RSA-OAEP", hash: "SHA-256" },

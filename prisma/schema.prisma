@@ -18,6 +18,7 @@ model User {
   encryptedUsername      String?   @map("encrypted_username") @db.Text
   encryptedPasswordHash  String?   @map("encrypted_password_hash") @db.Text
   publicKey              String?   @map("public_key") @db.Text
+  encryptedPrivateKey    String?   @map("encrypted_private_key") @db.Text
   createdAt              DateTime  @default(now()) @map("created_at")
 
   files                  File[]
